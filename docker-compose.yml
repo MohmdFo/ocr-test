@@ -88,7 +88,7 @@ services:
     image: redis:7-alpine
     container_name: ocr-redis
     ports:
-      - "6379:6379"
+      - "6380:6379"  # Changed to avoid conflict with existing Redis on 6379
     volumes:
       - redis_data:/data
     networks:
@@ -106,7 +106,7 @@ services:
     image: postgres:15-alpine
     container_name: ocr-postgres
     ports:
-      - "5432:5432"
+      - "5433:5432"  # Changed to avoid conflict with existing PostgreSQL on 5432
     environment:
       - POSTGRES_DB=ocr_db
       - POSTGRES_USER=ocr_user
