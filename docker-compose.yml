@@ -1,0 +1,110 @@
+version: '3.8'
+
+services:
+  # FastAPI OCR Service
+  fastapi_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: aip-ocr-api
+    ports:
+      - "8000:8000"
+    environment:
+      - LOG_LEVEL=INFO
+      - ENABLE_FILE_LOGGING=false
+      - DOTS_OCR_URL=http://dots-ocr:8000
+    volumes:
+      - uploads:/tmp/uploads
+    depends_on:
+      - dots-ocr
+    networks:
+      - ocr-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Dots OCR Service
+  dots-ocr:
+    image: rednote/dots.ocr:latest
+    container_name: dots-ocr-service
+    ports:
+      - "8001:8000"  # Map to different port to avoid conflicts
+    environment:
+      - LOG_LEVEL=INFO
+      - MODEL_PATH=/app/models
+      # Add any specific dots.ocr configuration here
+    volumes:
+      - models:/app/models
+      - ocr_cache:/app/cache
+    networks:
+      - ocr-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s  # OCR service might take longer to start
+
+  # Optional: Redis for caching (if needed)
+  redis:
+    image: redis:7-alpine
+    container_name: ocr-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - ocr-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Optional: PostgreSQL for storing OCR results/metadata
+  postgres:
+    image: postgres:15-alpine
+    container_name: ocr-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=ocr_db
+      - POSTGRES_USER=ocr_user
+      - POSTGRES_PASSWORD=ocr_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - ocr-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ocr_user -d ocr_db"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  uploads:
+    driver: local
+  models:
+    driver: local
+  ocr_cache:
+    driver: local
+  redis_data:
+    driver: local
+  postgres_data:
+    driver: local
+
+networks:
+  ocr-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
