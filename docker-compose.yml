@@ -44,6 +44,7 @@ services:
       - CUDA_VISIBLE_DEVICES=""
       - VLLM_USE_MODELSCOPE=true
       - VLLM_WORKER_MULTIPROC_METHOD=spawn
+      - VLLM_DEVICE=cpu
     # GPU configuration (uncomment if you have GPU available)
     # deploy:
     #   resources:
@@ -76,6 +77,7 @@ services:
         sed -i '/^from vllm\.entrypoints\.cli\.main import main/a from DotsOCR import modeling_dots_ocr_vllm' $(which vllm) || echo "vllm already patched";
         echo 'Starting CPU-based vLLM server...';
         exec vllm serve /workspace/weights/DotsOCR \
+            --device cpu \
             --tensor-parallel-size 1 \
             --chat-template-content-format string \
             --served-model-name dotsocr-model \
