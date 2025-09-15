@@ -1,0 +1,79 @@
+# Git files
+.git
+.gitignore
+README.md
+
+# Python cache and virtual environments
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+.venv
+venv/
+env/
+.env
+
+# Development and testing
+.pytest_cache
+.coverage
+.tox
+.mypy_cache
+htmlcov/
+.hypothesis/
+node_modules/
+
+# IDE and editor files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+
+# Logs and temporary files
+logs
+*.log
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Documentation
+docs/_build/
+
+# Development configuration
+docker-compose.dev.yml
+docker-compose.override.yml
+
+# Test files and data
+tests/
+examples/
+*.test
+test_*
+
+# Development scripts
+scripts/mock-*
+*.dev.*
+
+# Upload directories (these should be volumes in production)
+uploads/
+/tmp/uploads/
+
+# Poetry lock file (include pyproject.toml but poetry.lock can be regenerated)
+poetry.lock
+
+# Environment-specific files
+.env*
+!.env.example
