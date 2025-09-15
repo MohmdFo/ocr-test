@@ -8,7 +8,7 @@ services:
       dockerfile: Dockerfile
     container_name: aip-ocr-api
     ports:
-      - "8000:8000"
+      - "8500:8000"
     environment:
       - LOG_LEVEL=INFO
       - ENABLE_FILE_LOGGING=false
@@ -32,7 +32,7 @@ services:
     image: rednote/dots.ocr:latest
     container_name: dots-ocr-service
     ports:
-      - "8001:8000"  # Map to different port to avoid conflicts
+      - "8501:8000"  # Map to different port to avoid conflicts
     environment:
       - LOG_LEVEL=INFO
       - MODEL_PATH=/app/models

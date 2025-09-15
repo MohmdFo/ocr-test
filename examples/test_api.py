@@ -13,7 +13,7 @@ import sys
 
 async def test_ocr_service():
     """Test the OCR service with a sample request."""
-    base_url = "http://localhost:8000"
+    base_url = "http://localhost:8500"
     
     async with httpx.AsyncClient() as client:
         # Test health endpoint
@@ -52,16 +52,16 @@ def create_sample_curl_commands():
     """Generate sample curl commands for testing."""
     commands = [
         "# Test service health",
-        "curl -X GET 'http://localhost:8000/v1/health'",
+        "curl -X GET 'http://localhost:8500/v1/health'",
         "",
         "# Test OCR health",
-        "curl -X GET 'http://localhost:8000/v1/ocr/health'",
+        "curl -X GET 'http://localhost:8500/v1/ocr/health'",
         "",
         "# Get supported formats",
-        "curl -X GET 'http://localhost:8000/v1/ocr/supported-formats'",
+        "curl -X GET 'http://localhost:8500/v1/ocr/supported-formats'",
         "",
         "# Upload and process an image",
-        "curl -X POST 'http://localhost:8000/v1/ocr/upload' \\",
+        "curl -X POST 'http://localhost:8500/v1/ocr/upload' \\",
         "  -H 'Content-Type: multipart/form-data' \\",
         "  -F 'file=@sample-image.png' \\",
         "  -F 'language=auto' \\",
@@ -69,13 +69,13 @@ def create_sample_curl_commands():
         "  -F 'include_bounding_boxes=false'",
         "",
         "# Process with JSON options",
-        "curl -X POST 'http://localhost:8000/v1/ocr/process' \\",
+        "curl -X POST 'http://localhost:8500/v1/ocr/process' \\",
         "  -H 'Content-Type: multipart/form-data' \\",
         "  -F 'file=@sample-image.png' \\",
         "  -F 'options={\"language\":\"en\",\"include_confidence\":true,\"include_bounding_boxes\":true}'",
         "",
         "# Get service statistics",
-        "curl -X GET 'http://localhost:8000/v1/ocr/stats'",
+        "curl -X GET 'http://localhost:8500/v1/ocr/stats'",
     ]
     
     return "\n".join(commands)

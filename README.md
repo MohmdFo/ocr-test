@@ -34,14 +34,14 @@ docker-compose up -d
 2. **Check service health:**
 
 ```bash
-curl http://localhost:8000/v1/health
-curl http://localhost:8000/v1/ocr/health
+curl http://localhost:8500/v1/health
+curl http://localhost:8500/v1/ocr/health
 ```
 
 3. **Access API documentation:**
 
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
+- Swagger UI: http://localhost:8500/docs
+- ReDoc: http://localhost:8500/redoc
 
 ### Development Setup
 
@@ -58,7 +58,7 @@ poetry install
 docker-compose -f docker-compose.dev.yml up -d
 
 # Or run locally
-poetry run uvicorn apps.main:app --reload --host 0.0.0.0 --port 8000
+poetry run uvicorn apps.main:app --reload --host 0.0.0.0 --port 8500
 ```
 
 ## Usage Examples
@@ -69,14 +69,14 @@ poetry run uvicorn apps.main:app --reload --host 0.0.0.0 --port 8000
 
 ```bash
 # Basic OCR processing
-curl -X POST "http://localhost:8000/v1/ocr/upload" \
+curl -X POST "http://localhost:8500/v1/ocr/upload" \
   -H "Content-Type: multipart/form-data" \
   -F "file=@your-image.png" \
   -F "language=en" \
   -F "include_confidence=true"
 
 # With bounding boxes
-curl -X POST "http://localhost:8000/v1/ocr/upload" \
+curl -X POST "http://localhost:8500/v1/ocr/upload" \
   -H "Content-Type: multipart/form-data" \
   -F "file=@your-image.png" \
   -F "language=auto" \
@@ -99,7 +99,7 @@ with open('your-image.png', 'rb') as f:
     }
     
     response = requests.post(
-        'http://localhost:8000/v1/ocr/upload',
+        'http://localhost:8500/v1/ocr/upload',
         files=files,
         data=data
     )

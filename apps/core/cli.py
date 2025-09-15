@@ -9,7 +9,7 @@ cli = typer.Typer()
 @cli.command()
 def runserver(
     host: str = "127.0.0.1",
-    port: int = 8000,
+    port: int = 8500,
     reload: bool = True,
 ):
     """
@@ -40,7 +40,7 @@ def runserver(
 @cli.command()
 def runprod(
     host: str = "0.0.0.0",
-    port: int = 8000,
+    port: int = 8500,
     workers: int = 4,
 ):
     """
