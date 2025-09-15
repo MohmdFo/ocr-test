@@ -29,7 +29,9 @@ services:
 
   # Dots OCR Service
   dots-ocr:
-    image: rednote/dots.ocr:latest
+    build:
+      context: ./dots-ocr
+      dockerfile: Dockerfile
     container_name: dots-ocr-service
     ports:
       - "8501:8000"  # Map to different port to avoid conflicts

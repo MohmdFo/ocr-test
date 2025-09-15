@@ -1,6 +1,27 @@
-# AIP OCR Service
+# AIP OCR Servi## Quick Start
 
-A **FastAPI application** integrated with [dots.ocr](https://github.com/rednote-hilab/dots.ocr) for high-performance optical character recognition (OCR) processing.
+### Prerequisites
+
+- Docker and Docker Compose
+- Python 3.9+ (for local development)
+
+### Setup dots.ocr Dependency
+
+The application requires the [dots.ocr](https://github.com/rednote-hilab/dots.ocr) service. Since the Docker image is not available on Docker Hub, you need to build it from source:
+
+```bash
+# Clone and setup dots.ocr
+./setup-dots-ocr.sh
+
+# This will clone the repository and prepare it for Docker building
+```
+
+**Note:** If you encounter issues building dots.ocr, you can use the development setup with a mock service:
+
+```bash
+# For development with mock OCR service
+docker compose -f docker-compose.dev.yml up -d
+```**FastAPI application** integrated with [dots.ocr](https://github.com/rednote-hilab/dots.ocr) for high-performance optical character recognition (OCR) processing.
 
 ## Features
 
