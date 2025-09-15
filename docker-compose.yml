@@ -79,7 +79,7 @@ services:
         echo 'Modifying vllm entrypoint for dots.ocr...';
         sed -i '/^from vllm\.entrypoints\.cli\.main import main/a from DotsOCR import modeling_dots_ocr_vllm' $(which vllm) || echo "vllm already patched";
         echo 'Starting CPU-based vLLM server...';
-        exec python -m vllm.entrypoints.openai.api_server \
+        exec python3 -m vllm.entrypoints.openai.api_server \
             --model /workspace/weights/DotsOCR \
             --tensor-parallel-size 1 \
             --chat-template-content-format string \
