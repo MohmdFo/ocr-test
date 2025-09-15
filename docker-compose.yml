@@ -48,6 +48,7 @@ services:
       - VLLM_LOGGING_LEVEL=DEBUG
       - VLLM_CPU_EXECUTOR=true
       - TORCH_DEVICE=cpu
+      - VLLM_ATTENTION_BACKEND=XFORMERS
     # GPU configuration (uncomment if you have GPU available)
     # deploy:
     #   resources:
@@ -81,6 +82,8 @@ services:
         echo 'Starting CPU-based vLLM server...';
         exec python3 -m vllm.entrypoints.openai.api_server \
             --model /workspace/weights/DotsOCR \
+            --device cpu \
+            --dtype float32 \
             --tensor-parallel-size 1 \
             --chat-template-content-format string \
             --served-model-name dotsocr-model \
