@@ -1,0 +1,49 @@
+# Docker Compose for Development
+# This version includes additional development tools and configurations
+
+version: '3.8'
+
+services:
+  # FastAPI OCR Service (Development)
+  fastapi_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: aip-ocr-api-dev
+    ports:
+      - "8000:8000"
+    environment:
+      - LOG_LEVEL=DEBUG
+      - ENABLE_FILE_LOGGING=true
+      - DOTS_OCR_URL=http://dots-ocr:8000
+      - RELOAD=true
+    volumes:
+      - .:/app
+      - uploads:/tmp/uploads
+    depends_on:
+      - dots-ocr
+    networks:
+      - ocr-network
+    restart: unless-stopped
+    command: ["uvicorn", "apps.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+  # Dots OCR Service (Mock for development)
+  dots-ocr:
+    image: nginx:alpine
+    container_name: dots-ocr-mock
+    ports:
+      - "8001:80"
+    volumes:
+      - ./scripts/mock-dots-ocr.conf:/etc/nginx/conf.d/default.conf
+      - ./scripts/mock-responses:/usr/share/nginx/html
+    networks:
+      - ocr-network
+    restart: unless-stopped
+
+volumes:
+  uploads:
+    driver: local
+
+networks:
+  ocr-network:
+    driver: bridge
