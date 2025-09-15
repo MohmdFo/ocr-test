@@ -72,7 +72,7 @@ uploads/
 /tmp/uploads/
 
 # Poetry lock file (include pyproject.toml but poetry.lock can be regenerated)
-poetry.lock
+# poetry.lock
 
 # Environment-specific files
 .env*

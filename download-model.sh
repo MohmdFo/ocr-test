@@ -42,14 +42,20 @@ if command -v modelscope &> /dev/null; then
     modelscope download --model rednote-hilab/dots.ocr --local_dir "$MODEL_DIR"
     echo "Model downloaded successfully!"
 else
-    echo "modelscope CLI not found. Installing it now..."
-    if command -v pip &> /dev/null; then
+    echo "modelscope CLI not found. Installing it in a virtual environment..."
+    if command -v python3 &> /dev/null; then
+        # Create a temporary virtual environment for modelscope
+        VENV_DIR="/tmp/modelscope_venv"
+        python3 -m venv "$VENV_DIR"
+        source "$VENV_DIR/bin/activate"
         pip install modelscope
         echo "modelscope installed. Attempting automatic download..."
         modelscope download --model rednote-hilab/dots.ocr --local_dir "$MODEL_DIR"
         echo "Model downloaded successfully!"
+        deactivate
+        rm -rf "$VENV_DIR"
     else
-        echo "pip not found. Please install modelscope manually with:"
+        echo "python3 not found. Please install modelscope manually with:"
         echo "pip install modelscope"
         echo "or download manually from the URL above."
     fi
