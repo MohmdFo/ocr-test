@@ -28,8 +28,8 @@ services:
   # Dots OCR Service
   dots-ocr:
     build:
-      context: ./dots-ocr
-      dockerfile: docker/Dockerfile
+      context: .
+      dockerfile: Dockerfile.dots-ocr-cpu
     container_name: dots-ocr-service
     ports:
       - "8501:8000"  # Map to different port to avoid conflicts
@@ -39,10 +39,10 @@ services:
       - ./models/dots.ocr:/workspace/weights/DotsOCR
     environment:
       - LOG_LEVEL=INFO
-      - MODEL_PATH=/app/models
       - PYTHONPATH=/workspace/weights:$PYTHONPATH
-      - VLLM_LOGGING_LEVEL=DEBUG
+      # CPU-specific environment variables
       - CUDA_VISIBLE_DEVICES=""
+      - VLLM_USE_MODELSCOPE=true
       - VLLM_WORKER_MULTIPROC_METHOD=spawn
     # GPU configuration (uncomment if you have GPU available)
     # deploy:
@@ -60,7 +60,7 @@ services:
       - -c
       - |
         set -ex;
-        echo '--- Starting dots.ocr server ---';
+        echo '--- Starting dots.ocr server (CPU mode) ---';
         echo 'Checking for model files...';
         if [ ! -d "/workspace/weights/DotsOCR" ] || [ -z "$(ls -A /workspace/weights/DotsOCR)" ]; then
           echo "ERROR: Model files not found in /workspace/weights/DotsOCR";
@@ -68,20 +68,24 @@ services:
           echo "And place it in ./models/dots.ocr directory";
           exit 1;
         fi;
-        echo 'Modifying vllm entrypoint...';
-        sed -i '/^from vllm\.entrypoints\.cli\.main import main/a from DotsOCR import modeling_dots_ocr_vllm' $(which vllm) && \
-        echo 'Starting server...';
+        echo 'Installing additional dependencies...';
+        pip install --no-cache-dir qwen_vl_utils || echo "Dependencies already installed";
+        echo 'Setting up Python path...';
+        export PYTHONPATH=/workspace/weights:$PYTHONPATH;
+        echo 'Modifying vllm entrypoint for dots.ocr...';
+        sed -i '/^from vllm\.entrypoints\.cli\.main import main/a from DotsOCR import modeling_dots_ocr_vllm' $(which vllm) || echo "vllm already patched";
+        echo 'Starting CPU-based vLLM server...';
         exec vllm serve /workspace/weights/DotsOCR \
             --tensor-parallel-size 1 \
-            --gpu-memory-utilization 0.1 \
             --chat-template-content-format string \
             --served-model-name dotsocr-model \
             --trust-remote-code \
             --host 0.0.0.0 \
             --port 8000 \
-            --device cpu \
-            --dtype float16 \
-            --max-model-len 2048
+            --enforce-eager \
+            --disable-log-stats \
+            --max-model-len 2048 \
+            --max-num-seqs 4
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s

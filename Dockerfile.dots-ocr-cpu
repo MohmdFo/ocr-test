@@ -1,0 +1,31 @@
+FROM vllm/vllm-openai:v0.9.1
+
+# Install required dependencies for dots.ocr
+RUN pip3 install flash_attn==2.8.0.post2
+RUN pip3 install transformers==4.51.3
+
+# Install additional dependencies for CPU inference
+RUN pip3 install qwen_vl_utils
+
+# Set working directory
+WORKDIR /workspace
+
+# Copy dots.ocr source code
+COPY dots-ocr/ /workspace/
+
+# Install dots.ocr
+RUN pip install -e .
+
+# Create weights directory
+RUN mkdir -p /workspace/weights
+
+# Set environment variables for CPU operation
+ENV CUDA_VISIBLE_DEVICES=""
+ENV VLLM_USE_MODELSCOPE=true
+ENV VLLM_WORKER_MULTIPROC_METHOD=spawn
+
+# Expose port
+EXPOSE 8000
+
+# Default command (will be overridden by docker-compose)
+CMD ["bash"]
