@@ -44,8 +44,6 @@ services:
       - CUDA_VISIBLE_DEVICES=""
       - VLLM_USE_MODELSCOPE=true
       - VLLM_WORKER_MULTIPROC_METHOD=spawn
-      - VLLM_USE_MODELSCOPE=true
-      - VLLM_ATTENTION_BACKEND=FLASHINFER
     # GPU configuration (uncomment if you have GPU available)
     # deploy:
     #   resources:
