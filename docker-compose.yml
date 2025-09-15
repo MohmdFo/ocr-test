@@ -41,6 +41,9 @@ services:
       - LOG_LEVEL=INFO
       - MODEL_PATH=/app/models
       - PYTHONPATH=/workspace/weights:$PYTHONPATH
+      - VLLM_LOGGING_LEVEL=DEBUG
+      - CUDA_VISIBLE_DEVICES=""
+      - VLLM_WORKER_MULTIPROC_METHOD=spawn
     # GPU configuration (uncomment if you have GPU available)
     # deploy:
     #   resources:
@@ -70,12 +73,15 @@ services:
         echo 'Starting server...';
         exec vllm serve /workspace/weights/DotsOCR \
             --tensor-parallel-size 1 \
-            --gpu-memory-utilization 0.8 \
+            --gpu-memory-utilization 0.1 \
             --chat-template-content-format string \
             --served-model-name dotsocr-model \
             --trust-remote-code \
             --host 0.0.0.0 \
-            --port 8000
+            --port 8000 \
+            --device cpu \
+            --dtype float16 \
+            --max-model-len 2048
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
