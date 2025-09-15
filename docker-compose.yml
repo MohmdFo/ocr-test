@@ -31,20 +31,53 @@ services:
   dots-ocr:
     build:
       context: ./dots-ocr
-      dockerfile: Dockerfile
+      dockerfile: docker/Dockerfile
     container_name: dots-ocr-service
     ports:
       - "8501:8000"  # Map to different port to avoid conflicts
+    volumes:
+      # Mount model directory (you need to download the model first)
+      # Model URL: https://www.modelscope.cn/models/rednote-hilab/dots.ocr
+      - ./models/dots.ocr:/workspace/weights/DotsOCR
     environment:
       - LOG_LEVEL=INFO
       - MODEL_PATH=/app/models
-      # Add any specific dots.ocr configuration here
-    volumes:
-      - models:/app/models
-      - ocr_cache:/app/cache
+      - PYTHONPATH=/workspace/weights:$PYTHONPATH
+    # GPU configuration (uncomment if you have GPU available)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - capabilities: [gpu]
+    #           device_ids: ['0']
     networks:
       - ocr-network
     restart: unless-stopped
+    # Custom entrypoint to match dots.ocr requirements
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        set -ex;
+        echo '--- Starting dots.ocr server ---';
+        echo 'Checking for model files...';
+        if [ ! -d "/workspace/weights/DotsOCR" ] || [ -z "$(ls -A /workspace/weights/DotsOCR)" ]; then
+          echo "ERROR: Model files not found in /workspace/weights/DotsOCR";
+          echo "Please download the model from: https://www.modelscope.cn/models/rednote-hilab/dots.ocr";
+          echo "And place it in ./models/dots.ocr directory";
+          exit 1;
+        fi;
+        echo 'Modifying vllm entrypoint...';
+        sed -i '/^from vllm\.entrypoints\.cli\.main import main/a from DotsOCR import modeling_dots_ocr_vllm' $(which vllm) && \
+        echo 'Starting server...';
+        exec vllm serve /workspace/weights/DotsOCR \
+            --tensor-parallel-size 1 \
+            --gpu-memory-utilization 0.8 \
+            --chat-template-content-format string \
+            --served-model-name dotsocr-model \
+            --trust-remote-code \
+            --host 0.0.0.0 \
+            --port 8000
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s

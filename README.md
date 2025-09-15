@@ -7,19 +7,34 @@
 
 ### Setup dots.ocr Dependency
 
-The application requires the [dots.ocr](https://github.com/rednote-hilab/dots.ocr) service. Since the Docker image is not available on Docker Hub, you need to build it from source:
+The application requires the [dots.ocr](https://github.com/rednote-hilab/dots.ocr) service. Follow these steps:
+
+1. **Clone the repository:**
+   ```bash
+   ./setup-dots-ocr.sh
+   ```
+
+2. **Download the model (Required):**
+   ```bash
+   ./download-model.sh
+   ```
+   
+   **Important:** The dots.ocr model is large (>10GB). You can also download it manually from:
+   [https://www.modelscope.cn/models/rednote-hilab/dots.ocr](https://www.modelscope.cn/models/rednote-hilab/dots.ocr)
+   
+   Extract the model files to `./models/dots.ocr/`
+
+3. **GPU Requirements:**
+   - The dots.ocr service requires GPU for optimal performance
+   - If no GPU is available, the service will fail to start
+   - For CPU-only testing, use the development setup with mock service
+
+### Alternative: Development with Mock Service
+
+For development without GPU or full model setup:
 
 ```bash
-# Clone and setup dots.ocr
-./setup-dots-ocr.sh
-
-# This will clone the repository and prepare it for Docker building
-```
-
-**Note:** If you encounter issues building dots.ocr, you can use the development setup with a mock service:
-
-```bash
-# For development with mock OCR service
+# Uses mock service - no model download needed
 docker compose -f docker-compose.dev.yml up -d
 ```**FastAPI application** integrated with [dots.ocr](https://github.com/rednote-hilab/dots.ocr) for high-performance optical character recognition (OCR) processing.
 
