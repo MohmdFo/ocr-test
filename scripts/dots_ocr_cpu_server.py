@@ -13,6 +13,8 @@ Notes:
 
 import io
 import os
+import json
+import logging
 import uvicorn
 from fastapi import FastAPI, File, UploadFile, Form
 from contextlib import asynccontextmanager
@@ -40,8 +42,13 @@ class OCRResponse(BaseModel):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # pragma: no cover
-    # Load on startup
-    load_model()
+    # Load on startup but don't crash on failure
+    global _load_error
+    try:
+        load_model()
+    except Exception as e:
+        _load_error = f"Model load failed: {e}"
+        logging.exception("Model load failed")
     yield
     # No teardown necessary
 
@@ -49,18 +56,43 @@ async def lifespan(app: FastAPI):  # pragma: no cover
 app = FastAPI(title="dots.ocr CPU Server", version="0.1.0", lifespan=lifespan)
 
 MODEL_PATH = os.getenv("DOTS_OCR_MODEL_PATH", "./weights/DotsOCR")
+MODEL_ID_FALLBACK = os.getenv("DOTS_OCR_MODEL_ID", None)
 PROMPT_MODE = os.getenv("DOTS_OCR_PROMPT", "prompt_layout_all_en")
 
 _model = None
 _processor = None
+_load_error: Optional[str] = None
+
+
+def _is_valid_hf_model_dir(path: str) -> bool:
+    try:
+        cfg_path = os.path.join(path, "config.json")
+        if not os.path.isfile(cfg_path):
+            return False
+        with open(cfg_path, "r", encoding="utf-8") as f:
+            cfg = json.load(f)
+        return bool(cfg.get("model_type") or cfg.get("auto_map") or cfg.get("architectures"))
+    except Exception:
+        return False
 
 
 def load_model():  # pragma: no cover
     global _model, _processor
     # Prefer float32 on CPU
     torch_dtype = torch.float32
+    # Choose source (local HF dir or hub ID fallback)
+    if os.path.isdir(MODEL_PATH) and _is_valid_hf_model_dir(MODEL_PATH):
+        source = MODEL_PATH
+    elif MODEL_ID_FALLBACK:
+        source = MODEL_ID_FALLBACK
+        logging.warning("Using DOTS_OCR_MODEL_ID fallback: %s", source)
+    else:
+        raise RuntimeError(
+            "DOTS_OCR_MODEL_PATH is not a valid Hugging Face model directory (missing config.json/model_type). "
+            "Set DOTS_OCR_MODEL_ID to a Hub model (e.g., 'Qwen/Qwen2.5-VL-3B-Instruct') or mount a valid model."
+        )
     _model = AutoModelForCausalLM.from_pretrained(
-        MODEL_PATH,
+        source,
         torch_dtype=torch_dtype,
         device_map="cpu",
         trust_remote_code=True,
@@ -71,13 +103,17 @@ def load_model():  # pragma: no cover
             setattr(_model.config, "attn_implementation", "sdpa")
         except Exception:
             pass
-    _processor = AutoProcessor.from_pretrained(MODEL_PATH, trust_remote_code=True)
+    _processor = AutoProcessor.from_pretrained(source, trust_remote_code=True)
 
 
 @app.get("/health")
 def health():
     ok = _model is not None and _processor is not None
-    return {"status": "healthy" if ok else "loading"}
+    if ok:
+        return {"status": "healthy"}
+    if _load_error:
+        return {"status": "error", "message": _load_error}
+    return {"status": "loading"}
 
 
 @app.post("/ocr")
@@ -88,6 +124,8 @@ async def ocr(
     include_bounding_boxes: bool = Form(False),
 ):
     try:
+        if _model is None or _processor is None:
+            return JSONResponse(status_code=503, content={"success": False, "message": _load_error or "Model not ready", "predictions": []})
         content = await file.read()
         image_bytes = io.BytesIO(content)
 
