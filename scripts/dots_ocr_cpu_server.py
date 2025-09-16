@@ -15,6 +15,7 @@ import io
 import os
 import uvicorn
 from fastapi import FastAPI, File, UploadFile, Form
+from contextlib import asynccontextmanager
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Optional
@@ -37,7 +38,15 @@ class OCRResponse(BaseModel):
     predictions: list
 
 
-app = FastAPI(title="dots.ocr CPU Server", version="0.1.0")
+@asynccontextmanager
+async def lifespan(app: FastAPI):  # pragma: no cover
+    # Load on startup
+    load_model()
+    yield
+    # No teardown necessary
+
+
+app = FastAPI(title="dots.ocr CPU Server", version="0.1.0", lifespan=lifespan)
 
 MODEL_PATH = os.getenv("DOTS_OCR_MODEL_PATH", "./weights/DotsOCR")
 PROMPT_MODE = os.getenv("DOTS_OCR_PROMPT", "prompt_layout_all_en")
@@ -46,7 +55,6 @@ _model = None
 _processor = None
 
 
-@app.on_event("startup")
 def load_model():  # pragma: no cover
     global _model, _processor
     # Prefer float32 on CPU
