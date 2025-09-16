@@ -1,0 +1,40 @@
+FROM python:3.11-slim as base
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    git \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Install Python deps for CPU inference
+# torch CPU wheel, transformers, fastapi stack, qwen_vl_utils
+RUN pip install --upgrade pip \
+ && pip install --no-cache-dir \
+    torch==2.4.0 --index-url https://download.pytorch.org/whl/cpu \
+    torchvision==0.19.0 --index-url https://download.pytorch.org/whl/cpu \
+    torchaudio==2.4.0 --index-url https://download.pytorch.org/whl/cpu \
+    transformers==4.51.3 \
+    qwen_vl_utils==0.0.11 \
+    fastapi==0.116.1 uvicorn[standard]==0.30.6 pydantic==2.11.7
+
+# Optional: clone dots.ocr for its utils (prompts)
+RUN git clone https://github.com/rednote-hilab/dots.ocr.git /app/dots.ocr \
+ && pip install -e /app/dots.ocr
+
+# Copy our minimal CPU server
+COPY scripts/dots_ocr_cpu_server.py /app/scripts/dots_ocr_cpu_server.py
+
+# Expose port
+EXPOSE 8000
+
+# Environment: provide defaults; override at runtime
+ENV DOTS_OCR_MODEL_PATH=/weights/DotsOCR \
+    PORT=8000
+
+CMD ["python", "-u", "/app/scripts/dots_ocr_cpu_server.py"]

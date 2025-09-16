@@ -1,0 +1,21 @@
+services:
+  dots-ocr-cpu:
+    build:
+      context: .
+      dockerfile: Dockerfile.dots-ocr-hf-cpu
+    container_name: dots-ocr-cpu
+    ports:
+      - "8501:8000"
+    environment:
+      - DOTS_OCR_MODEL_PATH=/weights/DotsOCR
+      - PORT=8000
+    volumes:
+      # Mount your model weights directory; the folder name must not contain a dot
+      - ./models/DotsOCR:/weights/DotsOCR:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
