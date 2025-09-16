@@ -23,9 +23,7 @@ RUN pip install --upgrade pip \
      qwen_vl_utils==0.0.11 \
      fastapi==0.116.1 uvicorn[standard]==0.30.6 pydantic==2.11.7
 
-# Optional: clone dots.ocr for its utils (prompts)
-RUN git clone https://github.com/rednote-hilab/dots.ocr.git /app/dots.ocr \
- && pip install -e /app/dots.ocr
+# Optional upstream clone removed: installing their package pulls flash-attn (CUDA) and fails on CPU.
 
 # Copy our minimal CPU server
 COPY scripts/dots_ocr_cpu_server.py /app/scripts/dots_ocr_cpu_server.py

@@ -27,11 +27,8 @@ try:
 except Exception:  # pragma: no cover
     process_vision_info = None
 
-try:
-    # Optional, used to get prompts
-    from dots_ocr.utils import dict_promptmode_to_prompt
-except Exception:
-    dict_promptmode_to_prompt = {"prompt_layout_all_en": "Please parse all layout info in English."}
+# Use a basic default prompt. Upstream prompts are available in the repo but not required here.
+dict_promptmode_to_prompt = {"prompt_layout_all_en": "Please parse all layout info in English."}
 
 
 class OCRResponse(BaseModel):
