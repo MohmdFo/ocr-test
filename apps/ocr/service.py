@@ -3,6 +3,7 @@
 
 import asyncio
 import json
+import os
 import time
 from typing import Dict, Any, List, Optional
 import httpx
@@ -257,7 +258,8 @@ class DotsOCRService:
 
 
 # Singleton instance for dependency injection
-ocr_service = DotsOCRService()
+default_url = os.getenv("DOTS_OCR_URL", "http://localhost:8501")
+ocr_service = DotsOCRService(dots_ocr_url=default_url)
 
 
 async def get_ocr_service() -> DotsOCRService:

@@ -10,11 +10,10 @@ services:
     environment:
       - LOG_LEVEL=INFO
       - ENABLE_FILE_LOGGING=false
-      - DOTS_OCR_URL=http://dots-ocr:8000
+      # Allow overriding dots.ocr URL via env; default to localhost:8501
+      - DOTS_OCR_URL=${DOTS_OCR_URL:-http://localhost:8501}
     volumes:
       - uploads:/tmp/uploads
-    depends_on:
-      - dots-ocr
     networks:
       - ocr-network
     restart: unless-stopped
@@ -24,48 +23,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
-
-  # Dots OCR Service
-  dots-ocr:
-    build:
-      context: .
-      dockerfile: Dockerfile.dots-ocr-cpu
-    container_name: dots-ocr-service
-    ports:
-      - "8501:8000"  # Map to different port to avoid conflicts
-    volumes:
-      # Mount model directory (you need to download the model first)
-      # Model URL: https://www.modelscope.cn/models/rednote-hilab/dots.ocr
-      - ./models/dots.ocr:/workspace/weights/DotsOCR:ro
-    environment:
-      - VLLM_CPU_KVCACHE_SPACE=4
-      - VLLM_CPU_OMP_THREADS_BIND=auto
-      - VLLM_LOGGING_LEVEL=INFO
-      - PYTHONPATH=/workspace/weights:/workspace
-      - TORCH_DEVICE=cpu
-      - CUDA_VISIBLE_DEVICES=""
-      - VLLM_DEVICE=cpu
-      - VLLM_PLATFORM=cpu
-    networks:
-      - ocr-network
-    restart: unless-stopped
-    security_opt:
-      - seccomp:unconfined
-    cap_add:
-      - SYS_NICE
-    shm_size: 4g
-    deploy:
-      resources:
-        limits:
-          memory: 8G
-        reservations:
-          memory: 4G
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/v1/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 120s  # OCR service might take longer to start
 
   # Optional: Redis for caching (if needed)
   redis:
@@ -109,10 +66,6 @@ services:
 
 volumes:
   uploads:
-    driver: local
-  models:
-    driver: local
-  ocr_cache:
     driver: local
   redis_data:
     driver: local

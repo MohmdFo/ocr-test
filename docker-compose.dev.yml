@@ -13,55 +13,19 @@ services:
     ports:
       - "8500:8000"
     environment:
-      - LOG_LEVEL=DEBUG
-      - ENABLE_FILE_LOGGING=true
-      - DOTS_OCR_URL=http://dots-ocr:8000
-      - RELOAD=true
+    - LOG_LEVEL=DEBUG
+    - ENABLE_FILE_LOGGING=true
+    - DOTS_OCR_URL=${DOTS_OCR_URL:-http://localhost:8501}
+    - RELOAD=true
     volumes:
       - .:/app
       - uploads:/tmp/uploads
-    depends_on:
-      - dots-ocr
     networks:
       - ocr-network
     restart: unless-stopped
     command: ["uvicorn", "apps.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
 
-  # Dots OCR Service (Mock for development)
-  # To use real dots.ocr, run: ./setup-dots-ocr.sh
-  # Then uncomment the build section below and comment out the image section
-  dots-ocr:
-    # Option 1: Use mock service for development
-    image: nginx:alpine
-    container_name: dots-ocr-mock
-    ports:
-      - "8501:80"
-    volumes:
-      - ./scripts/mock-dots-ocr.conf:/etc/nginx/conf.d/default.conf
-      - ./scripts/mock-responses:/usr/share/nginx/html
-    networks:
-      - ocr-network
-    restart: unless-stopped
-
-    # Option 2: Build from source (uncomment after running setup-dots-ocr.sh)
-    # build:
-    #   context: ./dots-ocr
-    #   dockerfile: Dockerfile
-    # ports:
-    #   - "8501:8000"
-    # environment:
-    #   - LOG_LEVEL=INFO
-    # volumes:
-    #   - models:/app/models
-    #   - ocr_cache:/app/cache
-    # networks:
-    #   - ocr-network
-    # restart: unless-stopped
-    # healthcheck:
-    #   test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-    #   interval: 30s
-    #   timeout: 10s
-    #   retries: 3
+  # Note: dots.ocr is intentionally excluded from dev compose to avoid dependency conflicts.
 
 volumes:
   uploads:
