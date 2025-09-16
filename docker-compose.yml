@@ -36,70 +36,36 @@ services:
     volumes:
       # Mount model directory (you need to download the model first)
       # Model URL: https://www.modelscope.cn/models/rednote-hilab/dots.ocr
-      - ./models/dots.ocr:/workspace/weights/DotsOCR
+      - ./models/dots.ocr:/workspace/weights/DotsOCR:ro
     environment:
-      - LOG_LEVEL=INFO
-      - PYTHONPATH=/workspace/weights:$PYTHONPATH
-      # CPU-specific environment variables
-      - CUDA_VISIBLE_DEVICES=""
-      - VLLM_USE_MODELSCOPE=true
-      - VLLM_WORKER_MULTIPROC_METHOD=spawn
-      - VLLM_DEVICE=cpu
-      - VLLM_LOGGING_LEVEL=DEBUG
-      - VLLM_CPU_EXECUTOR=true
+      - VLLM_CPU_KVCACHE_SPACE=4
+      - VLLM_CPU_OMP_THREADS_BIND=auto
+      - VLLM_LOGGING_LEVEL=INFO
+      - PYTHONPATH=/workspace/weights:/workspace
       - TORCH_DEVICE=cpu
-      - VLLM_ATTENTION_BACKEND=XFORMERS
-    # GPU configuration (uncomment if you have GPU available)
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - capabilities: [gpu]
-    #           device_ids: ['0']
+      - CUDA_VISIBLE_DEVICES=""
+      - VLLM_DEVICE=cpu
+      - VLLM_PLATFORM=cpu
     networks:
       - ocr-network
     restart: unless-stopped
-    # Custom entrypoint to match dots.ocr requirements
-    entrypoint: /bin/bash
-    command:
-      - -c
-      - |
-        set -ex;
-        echo '--- Starting dots.ocr server (CPU mode) ---';
-        echo 'Checking for model files...';
-        if [ ! -d "/workspace/weights/DotsOCR" ] || [ -z "$(ls -A /workspace/weights/DotsOCR)" ]; then
-          echo "ERROR: Model files not found in /workspace/weights/DotsOCR";
-          echo "Please download the model from: https://www.modelscope.cn/models/rednote-hilab/dots.ocr";
-          echo "And place it in ./models/dots.ocr directory";
-          exit 1;
-        fi;
-        echo 'Installing additional dependencies...';
-        pip install --no-cache-dir qwen_vl_utils || echo "Dependencies already installed";
-        echo 'Setting up Python path...';
-        export PYTHONPATH=/workspace/weights:$PYTHONPATH;
-        echo 'Modifying vllm entrypoint for dots.ocr...';
-        sed -i '/^from vllm\.entrypoints\.cli\.main import main/a from DotsOCR import modeling_dots_ocr_vllm' $(which vllm) || echo "vllm already patched";
-        echo 'Starting CPU-based vLLM server...';
-        exec python3 -m vllm.entrypoints.openai.api_server \
-            --model /workspace/weights/DotsOCR \
-            --device cpu \
-            --dtype float32 \
-            --tensor-parallel-size 1 \
-            --chat-template-content-format string \
-            --served-model-name dotsocr-model \
-            --trust-remote-code \
-            --host 0.0.0.0 \
-            --port 8000 \
-            --enforce-eager \
-            --disable-log-stats \
-            --max-model-len 2048 \
-            --max-num-seqs 4
+    security_opt:
+      - seccomp:unconfined
+    cap_add:
+      - SYS_NICE
+    shm_size: 4g
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+        reservations:
+          memory: 4G
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/v1/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s  # OCR service might take longer to start
+      start_period: 120s  # OCR service might take longer to start
 
   # Optional: Redis for caching (if needed)
   redis:
