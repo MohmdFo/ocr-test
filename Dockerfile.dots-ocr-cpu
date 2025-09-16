@@ -9,16 +9,20 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install vLLM with CPU support
+
+# Install vLLM and compatible dependencies for CPU
 RUN pip install --no-cache-dir \
     vllm==0.6.2 \
-    transformers>=4.40.0 \
-    torch>=2.0.0+cpu \
-    torchvision \
+    torch==2.1.2+cpu \
+    torchvision==0.16.2+cpu \
+    --extra-index-url https://download.pytorch.org/whl/cpu
+
+# Install transformers and other dependencies separately
+RUN pip install --no-cache-dir \
+    transformers==4.36.2 \
     qwen_vl_utils \
     pillow \
-    requests \
-    --extra-index-url https://download.pytorch.org/whl/cpu
+    requests
 
 # Set CPU-specific environment variables
 ENV VLLM_CPU_KVCACHE_SPACE=4 \
