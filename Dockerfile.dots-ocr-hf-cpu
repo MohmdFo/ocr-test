@@ -22,7 +22,8 @@ RUN pip install --upgrade pip \
      transformers==4.51.3 \
      qwen_vl_utils==0.0.11 \
     fastapi==0.116.1 uvicorn[standard]==0.30.6 pydantic==2.11.7 \
-    python-multipart
+    python-multipart \
+    huggingface_hub==0.24.6
 
 # Optional upstream clone removed: installing their package pulls flash-attn (CUDA) and fails on CPU.
 

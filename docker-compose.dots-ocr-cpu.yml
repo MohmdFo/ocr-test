@@ -8,12 +8,13 @@ services:
       - "8501:8000"
     environment:
       DOTS_OCR_MODEL_PATH: /weights/DotsOCR
+      DOTS_OCR_MODEL_ID: rednote-hilab/dots.ocr
       PORT: "8000"
       OMP_NUM_THREADS: "8"
       MKL_NUM_THREADS: "8"
       TOKENIZERS_PARALLELISM: "false"
     volumes:
-      # Preferred target (dot-free)
+      # Preferred target (dot-free) - writable to store downloaded snapshot
       - ./models/DotsOCR:/weights/DotsOCR
       # Optional dotted source; if present, entrypoint copies into dot-free target on start
       - ./models/dots.ocr:/weights_src/dots.ocr:ro
