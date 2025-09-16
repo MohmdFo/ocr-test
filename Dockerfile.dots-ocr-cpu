@@ -2,102 +2,70 @@
 FROM python:3.11-slim as base
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y 
-    build-essential 
-    cmake 
-    git 
-    curl 
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    cmake \
+    git \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Install vLLM with CPU support
-RUN pip install --no-cache-dir 
-    vllm==0.6.2 
-    transformers>=4.40.0 
-    torch>=2.0.0+cpu 
-    torchvision 
-    qwen_vl_utils 
-    pillow 
-    requests 
+RUN pip install --no-cache-dir \
+    vllm==0.6.2 \
+    transformers>=4.40.0 \
+    torch>=2.0.0+cpu \
+    torchvision \
+    qwen_vl_utils \
+    pillow \
+    requests \
     --extra-index-url https://download.pytorch.org/whl/cpu
 
 # Set CPU-specific environment variables
-ENV VLLM_CPU_KVCACHE_SPACE=4 
-    VLLM_CPU_OMP_THREADS_BIND=auto 
-    VLLM_LOGGING_LEVEL=INFO 
-    PYTHONPATH=/workspace/weights:/workspace 
-    TORCH_DEVICE=cpu 
-    CUDA_VISIBLE_DEVICES="" 
-    VLLM_DEVICE=cpu 
+ENV VLLM_CPU_KVCACHE_SPACE=4 \
+    VLLM_CPU_OMP_THREADS_BIND=auto \
+    VLLM_LOGGING_LEVEL=INFO \
+    PYTHONPATH=/workspace/weights:/workspace \
+    TORCH_DEVICE=cpu \
+    CUDA_VISIBLE_DEVICES="" \
+    VLLM_DEVICE=cpu \
     VLLM_PLATFORM=cpu
 
 # Create workspace directory
 WORKDIR /workspace
 
 # Create CPU-optimized entrypoint script
-RUN echo '#!/bin/bash
-
-set -e
-
-
-
-echo "--- Starting dots.ocr server (CPU mode) ---"
-
-echo "Checking for model files..."
-
-
-
-if [ ! -d "/workspace/weights/DotsOCR" ]; then
-
-    echo "ERROR: DotsOCR model files not found in /workspace/weights/DotsOCR"
-
-    echo "Please ensure the model is properly mounted or copied"
-
-    exit 1
-
-fi
-
-
-
-echo "Model files found:"
-
-ls -la /workspace/weights/DotsOCR | head -10
-
-
-
-echo "Setting up Python path..."
-
-export PYTHONPATH=/workspace/weights:$PYTHONPATH
-
-
-
-echo "Starting CPU-optimized vLLM server..."
-
-exec python3 -m vllm.entrypoints.openai.api_server 
-
-    --model /workspace/weights/DotsOCR 
-
-    --tensor-parallel-size 1 
-
-    --served-model-name dotsocr-model 
-
-    --trust-remote-code 
-
-    --host 0.0.0.0 
-
-    --port 8000 
-
-    --enforce-eager 
-
-    --disable-log-stats 
-
-    --max-model-len 2048 
-
-    --max-num-seqs 4 
-
-    --dtype bfloat16 
-
-    --device cpu
-
+RUN echo '#!/bin/bash\n\
+set -e\n\
+\n\
+echo "--- Starting dots.ocr server (CPU mode) ---"\n\
+echo "Checking for model files..."\n\
+\n\
+if [ ! -d "/workspace/weights/DotsOCR" ]; then\n\
+    echo "ERROR: DotsOCR model files not found in /workspace/weights/DotsOCR"\n\
+    echo "Please ensure the model is properly mounted or copied"\n\
+    exit 1\n\
+fi\n\
+\n\
+echo "Model files found:"\n\
+ls -la /workspace/weights/DotsOCR | head -10\n\
+\n\
+echo "Setting up Python path..."\n\
+export PYTHONPATH=/workspace/weights:$PYTHONPATH\n\
+\n\
+echo "Starting CPU-optimized vLLM server..."\n\
+exec python3 -m vllm.entrypoints.openai.api_server \\\n\
+    --model /workspace/weights/DotsOCR \\\n\
+    --tensor-parallel-size 1 \\\n\
+    --served-model-name dotsocr-model \\\n\
+    --trust-remote-code \\\n\
+    --host 0.0.0.0 \\\n\
+    --port 8000 \\\n\
+    --enforce-eager \\\n\
+    --disable-log-stats \\\n\
+    --max-model-len 2048 \\\n\
+    --max-num-seqs 4 \\\n\
+    --dtype bfloat16 \\\n\
+    --device cpu\n\
 ' > /workspace/entrypoint.sh && chmod +x /workspace/entrypoint.sh
 
 # Expose port
