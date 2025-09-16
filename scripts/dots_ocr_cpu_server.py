@@ -80,6 +80,18 @@ def load_model():  # pragma: no cover
     global _model, _processor
     # Prefer float32 on CPU
     torch_dtype = torch.float32
+    # Guard: folder names containing dots can break transformers dynamic module imports
+    def _has_dot_in_any_segment(p: str) -> bool:
+        for seg in os.path.normpath(p).split(os.sep):
+            if seg and '.' in seg:
+                return True
+        return False
+
+    if _has_dot_in_any_segment(MODEL_PATH):
+        raise RuntimeError(
+            "Model path contains a '.' in a directory name, which can break HuggingFace dynamic modules. "
+            "Please rename your model directory to a dot-free name (e.g., models/DotsOCR) and update the mount."
+        )
     # Choose source (local HF dir or hub ID fallback)
     if os.path.isdir(MODEL_PATH) and _is_valid_hf_model_dir(MODEL_PATH):
         source = MODEL_PATH
