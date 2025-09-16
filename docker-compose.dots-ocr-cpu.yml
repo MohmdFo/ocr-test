@@ -7,14 +7,14 @@ services:
     ports:
       - "8501:8000"
     environment:
-      - DOTS_OCR_MODEL_PATH=/weights/DotsOCR
-      - PORT=8000
-      - OMP_NUM_THREADS=8
-      - MKL_NUM_THREADS=8
-      - TOKENIZERS_PARALLELISM=false
+      DOTS_OCR_MODEL_PATH: /weights/dots.ocr
+      PORT: "8000"
+      OMP_NUM_THREADS: "8"
+      MKL_NUM_THREADS: "8"
+      TOKENIZERS_PARALLELISM: "false"
     volumes:
-      # Mount your model weights directory; the folder name must not contain a dot
-      - ./models/DotsOCR:/weights/DotsOCR:ro
+      # Mount your model weights directory (dots in the name are fine)
+      - ./models/dots.ocr:/weights/dots.ocr:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
