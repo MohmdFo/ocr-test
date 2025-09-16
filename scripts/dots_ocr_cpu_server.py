@@ -103,12 +103,25 @@ def load_model():  # pragma: no cover
             "DOTS_OCR_MODEL_PATH is not a valid Hugging Face model directory (missing config.json/model_type). "
             "Set DOTS_OCR_MODEL_ID to a Hub model (e.g., 'Qwen/Qwen2.5-VL-3B-Instruct') or mount a valid model."
         )
-    _model = AutoModelForCausalLM.from_pretrained(
-        source,
-        torch_dtype=torch_dtype,
-        device_map="cpu",
-        trust_remote_code=True,
-    )
+    try:
+        _model = AutoModelForCausalLM.from_pretrained(
+            source,
+            torch_dtype=torch_dtype,
+            device_map="cpu",
+            trust_remote_code=True,
+        )
+    except ValueError as e:
+        # e.g., "Using a `device_map` or `tp_plan` requires `accelerate`"
+        if "requires `accelerate`" in str(e).lower():
+            logging.warning("accelerate not available; loading model on CPU without device_map.")
+            _model = AutoModelForCausalLM.from_pretrained(
+                source,
+                torch_dtype=torch_dtype,
+                trust_remote_code=True,
+            )
+            _model.to("cpu")
+        else:
+            raise
     # Force CPU-friendly attention
     if hasattr(_model, "config"):
         try:
