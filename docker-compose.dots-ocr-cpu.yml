@@ -13,8 +13,10 @@ services:
       MKL_NUM_THREADS: "8"
       TOKENIZERS_PARALLELISM: "false"
     volumes:
-      # Mount a dot-free model directory to avoid dynamic module import issues
-      - ./models/DotsOCR:/weights/DotsOCR:ro
+      # Preferred target (dot-free)
+      - ./models/DotsOCR:/weights/DotsOCR
+      # Optional dotted source; if present, entrypoint copies into dot-free target on start
+      - ./models/dots.ocr:/weights_src/dots.ocr:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s

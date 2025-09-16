@@ -28,6 +28,8 @@ RUN pip install --upgrade pip \
 
 # Copy our minimal CPU server
 COPY scripts/dots_ocr_cpu_server.py /app/scripts/dots_ocr_cpu_server.py
+COPY scripts/entrypoint.sh /app/scripts/entrypoint.sh
+RUN chmod +x /app/scripts/entrypoint.sh
 
 # Expose port
 EXPOSE 8000
@@ -36,4 +38,4 @@ EXPOSE 8000
 ENV DOTS_OCR_MODEL_PATH=/weights/DotsOCR \
     PORT=8000
 
-CMD ["python", "-u", "/app/scripts/dots_ocr_cpu_server.py"]
+ENTRYPOINT ["/app/scripts/entrypoint.sh"]

@@ -87,10 +87,10 @@ def load_model():  # pragma: no cover
                 return True
         return False
 
+    # If the model path still contains dots after entrypoint, warn (copy may have failed)
     if _has_dot_in_any_segment(MODEL_PATH):
-        raise RuntimeError(
-            "Model path contains a '.' in a directory name, which can break HuggingFace dynamic modules. "
-            "Please rename your model directory to a dot-free name (e.g., models/DotsOCR) and update the mount."
+        logging.warning(
+            "Model path contains '.' segments. If you mounted models/dots.ocr, the entrypoint should have copied it to a dot-free path."
         )
     # Choose source (local HF dir or hub ID fallback)
     if os.path.isdir(MODEL_PATH) and _is_valid_hf_model_dir(MODEL_PATH):
